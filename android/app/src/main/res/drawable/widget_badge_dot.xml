@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plain white oval — CoachSummaryWidgetProvider tints this per-instance
+     via setInt(id, "setColorFilter", color) to the same
+     good/warn/neutral band color the iOS BadgeView circle uses. A flat
+     white base (rather than a specific brand color baked in) is what makes
+     that runtime tint work regardless of which color is applied. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#FFFFFF" />
+</shape>

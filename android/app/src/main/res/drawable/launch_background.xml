@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cold-launch window background — set as AppTheme's windowBackground below,
+  so the OS paints this the instant the window is created, before any
+  Activity/JS code runs. Mirrors ios/GymBee/LaunchScreen.storyboard exactly:
+  same sosetBackground ground, same ic_setsocial_mark/LaunchMark asset (both
+  are the identical 220x174 PNG), same ~24%-of-screen-width sizing as
+  LoadingScreen.tsx's MARK_WIDTH_FRACTION (90dp is that fraction of a
+  ~375dp-wide phone, the iOS storyboard's own reference frame). Only ever
+  seen for a moment on a cold start — this app is single-Activity, so once
+  RN's root view mounts and paints LoadingScreen.tsx (same bg, same mark),
+  there's nothing left underneath to notice the handoff.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/sosetBackground" />
+    <item
+        android:width="90dp"
+        android:height="71dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/ic_setsocial_mark"
+            android:gravity="fill" />
+    </item>
+</layer-list>

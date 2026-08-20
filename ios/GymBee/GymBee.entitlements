@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.soset.app.widget</string>
+	</array>
+	<!-- 'development' talks to APNs' sandbox host — matches
+	     APNS_ENVIRONMENT=sandbox on the send-push Edge Function. Xcode swaps
+	     this to 'production' automatically for App Store / TestFlight
+	     archives signed with a distribution profile; APNS_ENVIRONMENT must be
+	     flipped to 'production' at the same time or sends will silently
+	     target the wrong APNs host. -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Lets the Messages push use interruption-level: time-sensitive to
+	     break through Focus/DND, per the reviewed design spec. Requires the
+	     Time Sensitive Notifications capability to also be enabled for this
+	     App ID in the Apple Developer portal. -->
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
+	<!-- Apple Health, Phase 1 (docs/apple-health.md) — read-only, so no
+	     com.apple.developer.healthkit.access entries are needed (that array
+	     is only for the write/clinical-records capabilities this app
+	     doesn't use). Xcode's "HealthKit" capability toggle writes exactly
+	     this key; added by hand here since this project edits entitlements
+	     directly rather than through the Xcode UI. Requires the App ID in
+	     the Apple Developer portal to have HealthKit enabled, and — if
+	     signing is set to "Automatically manage signing" — Xcode will
+	     regenerate the provisioning profile to match on next build; if
+	     manual profiles are used instead, the profile needs regenerating by
+	     hand before this builds. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+</dict>
+</plist>

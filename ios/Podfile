@@ -1,0 +1,112 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+# RN 0.86 defaults to a precompiled React-Core-prebuilt/ReactNativeDependencies
+# binary for faster local builds — but it's a stripped artifact that doesn't
+# export the raw Fabric C++ symbols (Sealable, ShadowNode, DebugStringConvertible,
+# BaseViewProps, ...) some native modules reference directly. Added when
+# @kingstinct/react-native-healthkit (via react-native-nitro-modules, whose
+# Fabric view-rendering support touches those symbols even though HealthKit
+# itself has no UI) started failing with "Undefined symbol: facebook::react::
+# Sealable::Sealable()" and similar at link time — the documented fix is
+# disabling the prebuilt core so React-Core compiles from source instead,
+# which actually exports everything. Slower `pod install`/first build, but
+# correct. See https://github.com/react-native-community/discussions-and-proposals/discussions/923.
+ENV['RCT_USE_RN_DEP'] = '0'
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+
+# hermes-engine's default prebuilt tarball ships no dSYM, so Xcode archives
+# built against it are missing hermesvm.framework's debug symbols — App
+# Store Connect flags this on upload ("The archive did not include a dSYM
+# for the hermesvm.framework with the UUIDs [...]"). Building Hermes from
+# source (the react-native-documented fix, see hermes-utils.rb's
+# RCT_BUILD_HERMES_FROM_SOURCE) makes the resulting hermesvm binary carry
+# real DWARF debug info (verified by hand with `dsymutil`) — but that alone
+# isn't sufficient, see the post_install hook below. Slower `pod
+# install`/first build, but correct — same tradeoff as RCT_USE_RN_DEP above.
+ENV['RCT_BUILD_HERMES_FROM_SOURCE'] = 'true'
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+target 'GymBee' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+
+    # Building Hermes from source (see RCT_BUILD_HERMES_FROM_SOURCE above)
+    # fixes the dSYM problem but exposes two more gaps in hermes-engine's
+    # CMake-driven build, neither of which the prebuilt tarball has because
+    # it's packaged by a separate, more careful release process. Both
+    # phases below patch hermesvm.framework's build output directly; both
+    # are named "[RN] [3]"/"[RN] [4]" so they sort (see the podspec's own
+    # note: phases run in alphabetical order) after "[RN] [2] Build Hermes",
+    # which produces the framework they depend on. Relative order between
+    # the two of them doesn't matter — neither depends on the other.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'hermes-engine'
+
+      # CMake's Info.plist template has no MinimumOSVersion key at all
+      # (confirmed: plutil -p on the built framework's Info.plist shows no
+      # such key), which App Store Connect rejects outright ("Invalid
+      # MinimumOSVersion... is ''" / "Missing Info.plist value... required").
+      # $IPHONEOS_DEPLOYMENT_TARGET here is hermes-engine's own pod target
+      # setting, which the podspec pins to "15.1" — already exactly the
+      # app's minimum — so this stays correct even if that pin changes.
+      plist_phase = target.new_shell_script_build_phase('[RN] [3] Patch Hermes Info.plist')
+      plist_phase.shell_script = <<-'SCRIPT'
+        set -e
+        HERMES_PLIST="${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/ios/hermesvm.framework/Info.plist"
+        if [ ! -f "$HERMES_PLIST" ]; then
+          exit 0
+        fi
+        plutil -remove MinimumOSVersion "$HERMES_PLIST" 2>/dev/null || true
+        plutil -insert MinimumOSVersion -string "${IPHONEOS_DEPLOYMENT_TARGET}" "$HERMES_PLIST"
+      SCRIPT
+
+      # hermesvm.framework is produced by this CMake-driven script phase,
+      # not Xcode's compiler/linker — so Xcode never attaches its usual
+      # automatic GenerateDSYMFile step to it, and `xcodebuild archive`
+      # silently omits its dSYM even though the binary itself carries full
+      # debug info (verified by hand with dsymutil). Running dsymutil by
+      # hand into $DWARF_DSYM_FOLDER_PATH — the same directory Xcode's own
+      # GenerateDSYMFile phase writes into — makes Xcode fold it into the
+      # .xcarchive like any other framework's dSYM.
+      dsym_phase = target.new_shell_script_build_phase('[RN] [4] Generate Hermes dSYM')
+      dsym_phase.shell_script = <<-'SCRIPT'
+        set -e
+        if [ -z "${DWARF_DSYM_FOLDER_PATH:-}" ]; then
+          exit 0
+        fi
+        HERMES_BINARY="${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/ios/hermesvm.framework/hermesvm"
+        if [ ! -f "$HERMES_BINARY" ]; then
+          exit 0
+        fi
+        mkdir -p "${DWARF_DSYM_FOLDER_PATH}"
+        dsymutil "$HERMES_BINARY" -o "${DWARF_DSYM_FOLDER_PATH}/hermesvm.framework.dSYM"
+      SCRIPT
+    end
+  end
+end

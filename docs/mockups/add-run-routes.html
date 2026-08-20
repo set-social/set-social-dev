@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Add-a-Run Routes</title>
+<style>
+  :root {
+    --bg-base: #090B10;
+    --bg-surface: #171B23;
+    --bg-surface-elevated: #1D222C;
+    --border-default: #29303C;
+    --border-subtle: rgba(255,255,255,0.06);
+    --text-primary: #F2F4F7;
+    --text-secondary: #A7AFBD;
+    --text-tertiary: #737C8C;
+    --text-on-accent: #04140D;
+    --accent-primary: #00E38E;
+    --accent-teal: #00D8B4;
+    --accent-orange: #FF8A3D;
+    --accent-blue: #00BFFF;
+    --accent-purple: #7861FF;
+    --danger: #FF5D6C;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 48px 24px 90px;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1220px; margin: 0 auto; }
+
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    color: var(--accent-purple); background: rgba(120,97,255,0.12); border: 1px solid rgba(120,97,255,0.32);
+    border-radius: var(--radius-pill); padding: 4px 10px; margin-bottom: 16px;
+  }
+  h1 { font-size: 29px; font-weight: 800; letter-spacing: -0.4px; margin: 0 0 12px; text-wrap: balance; }
+  .lede { font-size: 15.5px; color: var(--text-secondary); max-width: 720px; margin: 0; }
+
+  h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; margin: 0 0 6px; }
+  .section-sub { font-size: 13.5px; color: var(--text-secondary); max-width: 680px; margin: 0 0 22px; }
+  section { margin-top: 54px; }
+
+  /* ---- Option cards ---- */
+  .options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 1100px) { .options { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 620px) { .options { grid-template-columns: 1fr; } }
+
+  .opt-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .opt-card.picked {
+    border-color: rgba(0,227,142,0.45);
+    box-shadow: 0 0 0 1px rgba(0,227,142,0.2), 0 12px 30px rgba(0,227,142,0.06);
+  }
+  .opt-letter {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: var(--bg-surface-elevated); border: 1px solid var(--border-default);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: var(--text-secondary);
+  }
+  .opt-card.picked .opt-letter { background: rgba(0,227,142,0.16); border-color: rgba(0,227,142,0.4); color: var(--accent-primary); }
+  .opt-top { display: flex; align-items: center; justify-content: space-between; }
+  .pick-badge {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;
+    color: var(--accent-primary); background: rgba(0,227,142,0.14); border: 1px solid rgba(0,227,142,0.35);
+    border-radius: var(--radius-pill); padding: 3px 8px;
+  }
+  .opt-card h3 { font-size: 15.5px; font-weight: 700; margin: 0; }
+  .opt-card .blurb { font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+
+  /* ---- mini screen fragments ---- */
+  .mini-screen {
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 160px;
+    justify-content: center;
+  }
+  .m-btn {
+    border-radius: var(--radius-pill); padding: 9px 12px; text-align: center;
+    font-size: 11.5px; font-weight: 700;
+  }
+  .m-btn.primary { background: linear-gradient(90deg, var(--accent-primary), var(--accent-teal)); color: var(--text-on-accent); }
+  .m-btn.cardio {
+    background: rgba(255,138,61,0.1); border: 1.4px dashed rgba(255,138,61,0.55); color: var(--accent-orange);
+  }
+  .m-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);
+    border-radius: 8px; padding: 8px 10px; font-size: 11px;
+  }
+  .m-row.cardio-row { border-color: rgba(255,138,61,0.35); background: rgba(255,138,61,0.06); }
+  .m-row .name { font-weight: 600; }
+  .m-row .meta { color: var(--text-tertiary); font-size: 10px; }
+
+  .fab-scene {
+    position: relative;
+    height: 130px;
+    background: linear-gradient(180deg, var(--bg-surface-elevated), var(--bg-base));
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .fab {
+    position: absolute; bottom: 10px; right: 10px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-orange), #FF6A00);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; box-shadow: 0 6px 16px rgba(255,138,61,0.4);
+  }
+  .fab-menu {
+    position: absolute; bottom: 56px; right: 10px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .fab-menu-item {
+    background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill); padding: 5px 10px; font-size: 9.5px; font-weight: 700;
+    white-space: nowrap; text-align: right;
+  }
+  .fab-dim-row {
+    height: 8px; border-radius: 4px; background: var(--border-subtle); width: 70%; margin: 4px 10px;
+  }
+
+  .nudge-card {
+    background: rgba(255,138,61,0.08);
+    border: 1px solid rgba(255,138,61,0.3);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nudge-card .txt { flex: 1; font-size: 11px; color: var(--text-secondary); }
+  .nudge-card .go { font-size: 10.5px; font-weight: 800; color: var(--accent-orange); }
+  .complete-badge {
+    align-self: center; font-size: 22px; margin-bottom: -2px;
+  }
+  .complete-txt { text-align: center; font-size: 12px; font-weight: 700; }
+  .complete-sub { text-align: center; font-size: 10.5px; color: var(--text-tertiary); margin-top: -6px; }
+
+  .rating-row { display: flex; flex-direction: column; gap: 7px; margin-top: 2px; }
+  .rating-line { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+  .rating-line .lbl { width: 108px; color: var(--text-tertiary); flex-shrink: 0; }
+  .dots { display: flex; gap: 3px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border-default); }
+  .dot.on { background: var(--accent-primary); }
+  .opt-card.picked .dot.on { background: var(--accent-primary); }
+
+  /* ---- recommendation section ---- */
+  .rec-box {
+    background: linear-gradient(160deg, rgba(0,227,142,0.07), rgba(0,216,180,0.02));
+    border: 1px solid rgba(0,227,142,0.28);
+    border-radius: var(--radius-lg);
+    padding: 26px 28px;
+    display: flex;
+    gap: 26px;
+    align-items: flex-start;
+  }
+  @media (max-width: 800px) { .rec-box { flex-direction: column; } }
+  .rec-icon {
+    width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+    background: rgba(0,227,142,0.16); border: 1px solid rgba(0,227,142,0.4);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .rec-box h3 { font-size: 18px; margin: 0 0 8px; }
+  .rec-box p { font-size: 14px; color: var(--text-secondary); margin: 0 0 10px; }
+  .rec-box ul { margin: 8px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--text-secondary); }
+  .rec-box li { margin-bottom: 6px; }
+  .rec-box code { font-size: 12px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 5px; padding: 1px 5px; color: var(--accent-teal); }
+
+  footer.notes {
+    max-width: 900px; margin: 60px auto 0; border-top: 1px solid var(--border-default);
+    padding-top: 20px; color: var(--text-tertiary); font-size: 12.5px; line-height: 1.7;
+  }
+  footer.notes strong { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="tag">Four routes · nothing built yet</div>
+  <h1>Where "Add a Run" Should Live</h1>
+  <p class="lede">
+    Four genuinely different places this could go, each with a different tradeoff between
+    discoverability, how much new UI it needs, and how well it fits the app's existing
+    architecture. Option A is the one I'd actually build — reasoning below the comparison.
+  </p>
+
+  <section>
+    <h2>The four routes</h2>
+    <p class="section-sub">Same underlying goal — log a run without disturbing an already-planned workout — four different entry points.</p>
+
+    <div class="options">
+
+      <!-- OPTION A -->
+      <div class="opt-card picked">
+        <div class="opt-top">
+          <div class="opt-letter">A</div>
+          <span class="pick-badge">Recommended</span>
+        </div>
+        <h3>On the day itself</h3>
+        <p class="blurb">A dashed "+ Add a Run" button sits below Start Workout on that day's own detail screen — additive, visually distinct from the primary action.</p>
+
+        <div class="mini-screen">
+          <div class="m-btn primary">Start Workout</div>
+          <div class="m-btn cardio">🔥 + Add a Run</div>
+        </div>
+
+        <div class="rating-row">
+          <div class="rating-line"><span class="lbl">Discoverability</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div></div>
+          <div class="rating-line"><span class="lbl">Fits architecture</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div></div>
+          <div class="rating-line"><span class="lbl">New UI needed</span><div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        </div>
+      </div>
+
+      <!-- OPTION B -->
+      <div class="opt-card">
+        <div class="opt-top"><div class="opt-letter">B</div></div>
+        <h3>Folded into the exercise list</h3>
+        <p class="blurb">"Run" becomes just another row in Push Day's exercise list, alongside Bench Press — one combined session instead of two.</p>
+
+        <div class="mini-screen">
+          <div class="m-row"><span class="name">Bench Press</span><span class="meta">4×6-8</span></div>
+          <div class="m-row"><span class="name">Overhead Press</span><span class="meta">3×8-10</span></div>
+          <div class="m-row cardio-row"><span class="name">🔥 Run</span><span class="meta">5.2 km</span></div>
+        </div>
+
+        <div class="rating-row">
+          <div class="rating-line"><span class="lbl">Discoverability</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div></div>
+          <div class="rating-line"><span class="lbl">Fits architecture</span><div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+          <div class="rating-line"><span class="lbl">New UI needed</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div></div>
+        </div>
+      </div>
+
+      <!-- OPTION C -->
+      <div class="opt-card">
+        <div class="opt-top"><div class="opt-letter">C</div></div>
+        <h3>Global quick-log button</h3>
+        <p class="blurb">A floating "+" reachable from any screen (Today, Training, Home), same pattern the Community tab's post FAB already uses — pick a date, log a run, done.</p>
+
+        <div class="mini-screen" style="padding: 0;">
+          <div class="fab-scene">
+            <div class="fab-dim-row"></div>
+            <div class="fab-dim-row" style="width:50%;"></div>
+            <div class="fab-menu">
+              <div class="fab-menu-item">🔥 Log a Run</div>
+              <div class="fab-menu-item">🏋️ Log a Lift</div>
+            </div>
+            <div class="fab">＋</div>
+          </div>
+        </div>
+
+        <div class="rating-row">
+          <div class="rating-line"><span class="lbl">Discoverability</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div></div></div>
+          <div class="rating-line"><span class="lbl">Fits architecture</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div></div>
+          <div class="rating-line"><span class="lbl">New UI needed</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div></div>
+        </div>
+      </div>
+
+      <!-- OPTION D -->
+      <div class="opt-card">
+        <div class="opt-top"><div class="opt-letter">D</div></div>
+        <h3>Post-workout nudge</h3>
+        <p class="blurb">Right after finishing Push Day, the summary screen asks "Also went for a run?" — perfect timing, but only helps once a lift is already done.</p>
+
+        <div class="mini-screen">
+          <div class="complete-badge">✅</div>
+          <div class="complete-txt">Push Day complete</div>
+          <div class="complete-sub">4,820 kg · 9 sets</div>
+          <div class="nudge-card">
+            <span class="txt">Also went for a run today?</span>
+            <span class="go">Add →</span>
+          </div>
+        </div>
+
+        <div class="rating-row">
+          <div class="rating-line"><span class="lbl">Discoverability</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div></div>
+          <div class="rating-line"><span class="lbl">Fits architecture</span><div class="dots"><div class="dot on"></div><div class="dot on"></div><div class="dot on"></div><div class="dot"></div></div></div>
+          <div class="rating-line"><span class="lbl">New UI needed</span><div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>My pick: A, with D as a free bonus</h2>
+    <p class="section-sub"></p>
+    <div class="rec-box">
+      <div class="rec-icon">🏃</div>
+      <div>
+        <h3>Option A — additive button on the day itself</h3>
+        <p>The other three all trade something real away:</p>
+        <ul>
+          <li><strong>B fights the schema.</strong> <code>workout_log_sets</code> is built entirely around reps/load/RPE — every screen that touches it (<code>ActiveExerciseScreen</code>, rest timers, PR detection) assumes that shape. Forcing a GPS-tracked, minutes/km activity through the same pipe means either a special-cased row type everywhere or a second, parallel meaning for the same column — exactly the "duplicate model" trap this app's own docs (<code>docs/social.md</code>) explicitly warn against elsewhere. Keeping cardio as its own <code>cardio_log_entries</code> row is what the whole GPS-tracking feature already assumes.</li>
+          <li><strong>C is a bigger structural commitment than the payoff justifies.</strong> The Community tab's post FAB is precedent that this pattern exists in the app, but adding a second global FAB (or overloading the first one with an unrelated "start a workout" menu) is new persistent chrome on every tab, for a feature that's fundamentally about one specific day's plan. It solves "I want to log a run" in general, not "this day already has a plan and I want to add to it" — a different, narrower problem than what was actually asked.</li>
+          <li><strong>D is real but incomplete on its own.</strong> Great timing for someone who already finished lifting, useless for someone who wants to run first, or hasn't started the workout yet. It's a good <em>addition</em> to A, never a substitute for it.</li>
+        </ul>
+        <p>A is also the smallest actual build: the button itself is a one-line addition next to "Start Workout" — everything it navigates into (<code>LogCardioScreen</code>, <code>LiveCardioTrackingScreen</code>, Track Live) already exists and needs zero changes. The real work, same as flagged in the last mockup, is teaching <code>WorkoutLogDetailScreen</code>/<code>CompletedWorkoutCard</code> to actually render a cardio session instead of an empty card — which A, D, or any combination of these routes needs regardless of which entry point wins.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <strong>Not decided yet:</strong> whether D ships alongside A in the same pass or gets deferred —
+    it's cheap once A's underlying "two sessions, one day" rendering fix is in place, so it's more a
+    sequencing question than a design one. Say the word and I'll turn A (+ D if you want it) into a
+    real implementation plan.
+  </footer>
+
+</div>
+</body>
+</html>

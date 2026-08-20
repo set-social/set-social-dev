@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>SetSocial</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.soset</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>soset</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SetSocial uses your location when you tap "Check In" to show other nearby athletes you're at the gym, and to record your route when you track a run or ride live. Your exact location is never shared with other users.</string>
+	<!-- Only requested when starting a live-tracked cardio session
+	     (LiveCardioTrackingScreen, via routeTracking.ts) — never for the
+	     "At My Gym" check-in, which stays a one-shot foreground read. Lets
+	     route recording continue if the app is backgrounded mid-run instead
+	     of stopping the moment the screen isn't visible; see
+	     docs/gps-cardio.md. -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SetSocial uses your location to keep recording your route during a run or ride even if your phone is locked or you switch to another app mid-session.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SetSocial uses your camera so you can take a photo to post directly from the app.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SetSocial uses your photo library so you can set a profile photo or post an existing photo.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>SetSocial reads your resting heart rate, heart rate variability, sleep, and step count from Health so Arnold can factor them into your coaching — read-only, nothing is written back to Health.</string>
+	<!-- SetSocial never writes to Health (docs/apple-health.md, Phase 1 is
+	     read-only) and never requests HKHealthStore's write-authorization
+	     API. App Store Connect's static scan still requires this key because
+	     @kingstinct/react-native-healthkit links the HealthKit framework's
+	     write/save symbols into the binary even though this app's code path
+	     never calls them (ITMS-90683 "Missing purpose string" on upload
+	     without it). -->
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>SetSocial does not write any data to Health. This description is required because a linked library references Health's write APIs, but SetSocial only ever reads data — nothing is written back.</string>
+	<key>RCTNewArchEnabled</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<!-- Lets CLLocationManager keep delivering updates while backgrounded
+		     during a live-tracked cardio session — only takes effect once
+		     Geolocation.setRNConfiguration enables it (routeTracking.ts),
+		     never during the one-shot "At My Gym" check-in read. -->
+		<string>location</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<!-- The app only uses standard HTTPS/TLS for networking (Supabase, Anthropic,
+	     Spotify, WHOOP) - no custom cryptography - which qualifies for the
+	     export-compliance exemption. Declaring it here answers App Store
+	     Connect's encryption questionnaire once for every future build instead
+	     of prompting on each one. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
+</plist>

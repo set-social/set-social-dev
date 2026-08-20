@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android counterpart of ios/GymBeeWidget's CoachSummaryWidget — same
+  payload (see WidgetBridge), same "Log Food" deep link into Arnold.
+  Android has no fixed small/medium/large families like WidgetKit; instead
+  this declares a resizable range and one layout (widget_coach_summary.xml)
+  that reads reasonably across it, closest to iOS's "medium" size by default.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="330dp"
+    android:maxResizeHeight="220dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_coach_summary"
+    android:previewLayout="@layout/widget_coach_summary"
+    android:previewImage="@drawable/widget_preview"
+    android:description="@string/widget_description" />

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SetSocial</string>
+    <string name="widget_name">Coach Summary</string>
+    <string name="widget_description">Today\'s readiness, streak, calories, and what\'s next on your training calendar — tap Log Food to send Arnold a meal.</string>
+    <string name="widget_log_food_label">🍽️ Log Food</string>
+    <string name="widget_open_app_title">Open SetSocial</string>
+    <string name="widget_open_app_subtitle">to sync today\'s summary</string>
+</resources>

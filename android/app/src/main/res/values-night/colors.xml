@@ -1,0 +1,13 @@
+<resources>
+    <!--
+      Coach Summary widget palette — dark mode override. See the base
+      values/colors.xml for the light values and the sync-by-hand note.
+    -->
+    <color name="widgetBg">#1D222C</color>
+    <color name="widgetTextPrimary">#F2F4F7</color>
+    <color name="widgetTextSecondary">#A7AFBD</color>
+    <color name="widgetTextTertiary">#737C8C</color>
+    <color name="widgetDivider">#14FFFFFF</color>
+    <color name="widgetGood">#00F5D4</color>
+    <color name="widgetWarn">#FFB454</color>
+</resources>

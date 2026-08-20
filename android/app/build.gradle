@@ -1,0 +1,212 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+// Android push notifications (FCM). Applied only once google-services.json
+// (from the Firebase console, see PushNotificationsModule.kt's header
+// comment) actually exists locally — it's gitignored, project-specific, and
+// not committed, same as .env — so a checkout without it yet still builds
+// and runs; push registration on Android just no-ops until it's added
+// (same "fail closed" contract PushNotificationsModule.kt documents).
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
+
+// react-native-reanimated's build.gradle.kts reads this from the :app
+// module's own ext specifically (safeAppExtGet), not rootProject's — unlike
+// gesture-handler/screens/svg/image-picker, which is why the same property
+// also lives in the root android/build.gradle isn't enough on its own. Both
+// exist to short-circuit a `node --print ...` call these libraries fall
+// back to when this is unset, which fails under Android Studio (no
+// Homebrew node on its PATH — see nodeExecutableAndArgs below).
+ext.REACT_NATIVE_NODE_MODULES_DIR = new File(rootDir, "../node_modules/react-native").absolutePath
+
+/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
+react {
+    /* Folders */
+    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
+    // root = file("../../")
+    //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
+    // reactNativeDir = file("../../node_modules/react-native")
+    //   The folder where the react-native Codegen package is. Default is ../../node_modules/@react-native/codegen
+    // codegenDir = file("../../node_modules/@react-native/codegen")
+    //   The cli.js file which is the React Native CLI entrypoint. Default is ../../node_modules/react-native/cli.js
+    // cliFile = file("../../node_modules/react-native/cli.js")
+
+    /* Variants */
+    //   The list of variants to that are debuggable. For those we're going to
+    //   skip the bundling of the JS bundle and the assets. Default is "debug", "debugOptimized".
+    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
+    // debuggableVariants = ["liteDebug", "liteDebugOptimized", "prodDebug", "prodDebugOptimized"]
+
+    /* Bundling */
+    //   A list containing the node command and its flags. Default is just 'node'.
+    //   Defaults to a hardcoded path (rather than bare "node") because
+    //   Android Studio, launched as a GUI app rather than from a terminal,
+    //   doesn't inherit the PATH your shell profile sets up — so it can't
+    //   find a Homebrew-installed node and every bundling task fails with
+    //   "Exec failed, error 2: No such file or directory". Same problem
+    //   iOS's ios/.xcode.env solves via NODE_BINARY — reused here for the
+    //   same reason: a CI runner's shell (unlike Android Studio's GUI
+    //   launch) already has a correct PATH, so setting NODE_BINARY=node
+    //   there is enough, without needing this Mac-specific fallback path.
+    //   Run `which node` locally and update the fallback if you installed
+    //   Node somewhere else (nvm, etc).
+    nodeExecutableAndArgs = [System.getenv("NODE_BINARY") ?: "/opt/homebrew/bin/node"]
+    //
+    //   The command to run when bundling. By default is 'bundle'
+    // bundleCommand = "ram-bundle"
+    //
+    //   The path to the CLI configuration file. Default is empty.
+    // bundleConfig = file(../rn-cli.config.js)
+    //
+    //   The name of the generated asset file containing your JS bundle
+    // bundleAssetName = "MyApplication.android.bundle"
+    //
+    //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
+    // entryFile = file("../js/MyApplication.android.js")
+    //
+    //   A list of extra flags to pass to the 'bundle' commands.
+    //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
+    // extraPackagerArgs = []
+
+    /* Hermes Commands */
+    //   The hermes compiler command to run. By default it is 'hermesc'
+    // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
+    //
+    //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
+    // hermesFlags = ["-O", "-output-source-map"]
+
+    /* Autolinking */
+    autolinkLibrariesWithApp()
+}
+
+/**
+ * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ *
+ * Was false — release builds shipped completely unshrunk, and
+ * proguard-rules.pro had no real keep rules staged for it (see the
+ * Android Readiness Audit). Flipped on now that those rules exist
+ * (this app's own native modules, Firebase, RevenueCat, Reanimated/
+ * Worklets) — verified the release build still succeeds, but R8/
+ * obfuscation issues are a runtime-only failure mode (a missing keep rule
+ * doesn't fail the build, it crashes or silently misbehaves on-device) —
+ * a real device smoke test of push notifications, the paywall, and any
+ * Reanimated-driven screen is essential before shipping a minified
+ * release, not optional.
+ */
+def enableProguardInReleaseBuilds = true
+
+/**
+ * The preferred build flavor of JavaScriptCore (JSC)
+ *
+ * For example, to use the international variant, you can use:
+ * `def jscFlavor = io.github.react-native-community:jsc-android-intl:2026004.+`
+ *
+ * The international variant includes ICU i18n library and necessary data
+ * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
+ * give correct results when using with locales other than en-US. Note that
+ * this variant is about 6MiB larger per architecture than default.
+ */
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    // namespace is the internal Kotlin/Java package (generated R class, etc.)
+    // and is independent of applicationId — it stays com.gymbee, matching
+    // the existing source layout at app/src/main/java/com/gymbee/, so no
+    // source files need to move for this rename.
+    namespace "com.gymbee"
+    defaultConfig {
+        // Must exactly match the package name this app's Play Console
+        // listing was created under. Permanent once anything is uploaded —
+        // do not change this again after the first real release.
+        applicationId "com.setsocial.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 103
+        versionName "1.0.102"
+        // Substitutes AndroidManifest.xml's usesCleartextTraffic="${usesCleartextTraffic}"
+        // placeholder — unresolved, the manifest merger fails the build outright.
+        // "false" matches this app's actual behavior (Supabase/API calls are all
+        // HTTPS; NSAppTransportSecurity on iOS is equally locked down aside from
+        // local networking for dev).
+        manifestPlaceholders = [usesCleartextTraffic: "false"]
+    }
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        // Real release signing, once it's set up (see the "hasProperty" guard
+        // below) — reads everything from Gradle properties rather than
+        // hardcoding a path/passwords here, so the actual keystore and its
+        // credentials never enter this file or git history. To enable:
+        //   1. Generate a keystore, e.g.
+        //      keytool -genkeypair -v -storetype PKCS12 -keystore upload-keystore.jks \
+        //        -alias upload -keyalg RSA -keysize 2048 -validity 10000
+        //   2. Put these four lines in ~/.gradle/gradle.properties (your
+        //      machine's global file, NOT this repo's android/gradle.properties):
+        //        MYAPP_UPLOAD_STORE_FILE=/absolute/path/to/upload-keystore.jks
+        //        MYAPP_UPLOAD_KEY_ALIAS=upload
+        //        MYAPP_UPLOAD_STORE_PASSWORD=<store password>
+        //        MYAPP_UPLOAD_KEY_PASSWORD=<key password>
+        //   3. Run ./gradlew bundleRelease as normal — release builds will
+        //      now sign with this instead of falling back to debug.
+        // See https://reactnative.dev/docs/signed-apk-android for background.
+        if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+            release {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            // Falls back to the debug keystore until MYAPP_UPLOAD_STORE_FILE
+            // etc. are set (see signingConfigs above) — keeps
+            // assembleRelease/bundleRelease working for anyone (or any CI
+            // job) that hasn't set up the real upload keystore yet, same as
+            // before this was wired up, rather than breaking their build.
+            signingConfig project.hasProperty('MYAPP_UPLOAD_STORE_FILE') ? signingConfigs.release : signingConfigs.debug
+            minifyEnabled enableProguardInReleaseBuilds
+            // Paired with minifyEnabled — without this, R8 shrinks/obfuscates
+            // code but unused resources (drawables, layouts, strings pulled
+            // in by libraries that go unused here) still ship in full. Only
+            // takes effect when minifyEnabled is also true, so this was a
+            // no-op until enableProguardInReleaseBuilds flipped on above.
+            shrinkResources enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
+    implementation("com.facebook.react:react-android")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+
+    // Android push notifications (FCM) — see PushNotificationsModule.kt.
+    // Resolves fine even before google-services.json exists; only the
+    // google-services plugin (applied conditionally above) needs that file.
+    implementation platform("com.google.firebase:firebase-bom:33.5.1")
+    implementation "com.google.firebase:firebase-messaging"
+}

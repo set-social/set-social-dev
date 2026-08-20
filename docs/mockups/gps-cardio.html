@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GPS Cardio Screens</title>
+<style>
+  :root {
+    --bg-base: #090B10;
+    --bg-surface: #171B23;
+    --bg-surface-elevated: #1D222C;
+    --border-default: #29303C;
+    --border-subtle: rgba(255,255,255,0.06);
+    --text-primary: #F2F4F7;
+    --text-secondary: #A7AFBD;
+    --text-tertiary: #737C8C;
+    --text-on-accent: #04140D;
+    --accent-primary: #00E38E;
+    --accent-primary-pressed: #00C67C;
+    --accent-subtle: rgba(0,227,142,0.12);
+    --accent-teal: #00D8B4;
+    --accent-blue: #00BFFF;
+    --accent-orange: #FF8A3D;
+    --danger: #FF5D6C;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 40px 24px 80px;
+  }
+
+  .page-header {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 0 0 8px;
+  }
+  .page-header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 720px;
+  }
+  .page-header .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    border: 1px solid rgba(0,227,142,0.25);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+    margin-bottom: 14px;
+  }
+
+  .frames {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .frame-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .frame-label {
+    text-align: center;
+  }
+  .frame-label .name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .frame-label .desc {
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    max-width: 340px;
+  }
+
+  /* Phone chrome */
+  .phone {
+    width: 360px;
+    height: 760px;
+    background: #000;
+    border-radius: 46px;
+    padding: 12px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+    flex-shrink: 0;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-base);
+    border-radius: 34px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .notch {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 22px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 20;
+  }
+
+  .status-bar {
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 24px 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Header bar matching Header component */
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 16px 14px;
+    flex-shrink: 0;
+  }
+  .app-header .side { width: 32px; display: flex; }
+  .app-header .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-primary);
+    font-size: 15px;
+  }
+  .app-header .title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+
+  .content {
+    flex: 1;
+    overflow: hidden;
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ---- Map placeholder ---- */
+  .map-box {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 34px),
+      linear-gradient(160deg, #131722 0%, #0D1017 100%);
+  }
+  .map-box.live { height: 300px; }
+  .map-box.summary { height: 200px; }
+
+  .map-box svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .map-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(9,11,16,0.72);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 5px 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    z-index: 5;
+  }
+
+  .gps-dot {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    border: 3px solid rgba(9,11,16,0.9);
+    box-shadow: 0 0 0 6px rgba(0,191,255,0.18);
+    transform: translate(-50%, -50%);
+  }
+  .gps-dot::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,191,255,0.35);
+    animation: pulse 2.2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.6); opacity: 0.9; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .pin {
+    position: absolute;
+    width: 22px; height: 22px;
+    border-radius: 50% 50% 50% 0;
+    transform: translate(-50%, -100%) rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text-on-accent);
+  }
+  .pin.start { background: var(--accent-primary); }
+  .pin.finish { background: var(--accent-orange); }
+  .pin span { transform: rotate(45deg); }
+
+  /* ---- Live stat readout ---- */
+  .live-primary-stat {
+    text-align: center;
+    padding: 6px 0 2px;
+  }
+  .live-primary-stat .value {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .live-primary-stat .unit {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 10px;
+  }
+  .stat-tile {
+    flex: 1;
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 10px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  .stat-tile .label {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .stat-tile .num {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-tile .num.accent { color: var(--accent-primary); }
+
+  .gap-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,180,84,0.1);
+    border: 1px solid rgba(255,180,84,0.25);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #FFB454;
+    font-weight: 600;
+  }
+
+  /* ---- Buttons ---- */
+  .btn-row { display: flex; gap: 10px; }
+  .btn {
+    flex: 1;
+    border-radius: var(--radius-pill);
+    padding: 15px 20px;
+    text-align: center;
+    font-size: 15.5px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    cursor: default;
+  }
+  .btn.primary {
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-teal));
+    color: var(--text-on-accent);
+  }
+  .btn.secondary {
+    background: var(--bg-surface-elevated);
+    border-color: var(--border-default);
+    color: var(--text-primary);
+  }
+  .btn.danger-outline {
+    background: transparent;
+    border-color: rgba(255,93,108,0.4);
+    color: var(--danger);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    background: var(--bg-surface-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  .card .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+
+  .summary-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .summary-stat-grid .item { text-align: center; }
+  .summary-stat-grid .item .num {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .summary-stat-grid .item .lbl {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+  }
+
+  /* Splits table */
+  .splits {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .split-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 60px 44px;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 2px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .split-row:last-child { border-bottom: none; }
+  .split-row .km {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+  }
+  .split-bar-track {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+  .split-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-teal));
+  }
+  .split-row .pace {
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .split-row .best-tag {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    color: var(--accent-primary);
+    background: var(--accent-subtle);
+    border-radius: 5px;
+    padding: 2px 5px;
+    text-align: center;
+  }
+
+  .scroll-fade {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 4px;
+  }
+  .scroll-fade::-webkit-scrollbar { display: none; }
+
+  footer.notes {
+    max-width: 1100px;
+    margin: 56px auto 0;
+    border-top: 1px solid var(--border-default);
+    padding-top: 20px;
+    color: var(--text-tertiary);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  footer.notes strong { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="tag">Phase 1 · For review</div>
+  <h1>GPS-Tracked Cardio — Layout Mockup</h1>
+  <p>
+    Static layout reference for the two new screens described in <code>docs/gps-cardio.md</code>:
+    the live-tracking screen (shown while a run/ride is being recorded) and the post-run summary
+    screen (shown after tapping Finish, before Save). Map areas are placeholders, not real tiles —
+    the goal here is information hierarchy and visual style, matching the existing SetSocial dark
+    theme (<code>src/theme/tokens.ts</code>), not final map rendering.
+  </p>
+</div>
+
+<div class="frames">
+
+  <div class="frame-col">
+    <div class="frame-label">
+      <div class="name">1 · Live Tracking</div>
+      <div class="desc">LiveCardioTrackingScreen — active session, map follows current position, stats update live</div>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>●●●&nbsp;&nbsp;📶&nbsp;&nbsp;🔋</span>
+        </div>
+
+        <div class="app-header">
+          <div class="side"><div class="icon-btn">✕</div></div>
+          <div class="title">Outdoor Run</div>
+          <div class="side"></div>
+        </div>
+
+        <div class="content">
+          <div class="map-box live">
+            <div class="map-badge">GPS · High Accuracy</div>
+            <svg viewBox="0 0 320 300" preserveAspectRatio="none">
+              <polyline points="60,240 80,210 75,180 100,160 130,150 150,120 145,90 170,70 190,60"
+                fill="none" stroke="#00E38E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+              <polyline points="60,240 80,210 75,180 100,160 130,150 150,120 145,90 170,70 190,60"
+                fill="none" stroke="#00E38E" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.15"/>
+            </svg>
+            <div class="pin start" style="left:60px; top:240px;"><span>S</span></div>
+            <div class="gps-dot" style="left:190px; top:60px;"></div>
+          </div>
+
+          <div class="live-primary-stat">
+            <div class="value">3.42</div>
+            <div class="unit">Kilometers</div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-tile">
+              <div class="label">Duration</div>
+              <div class="num">21:04</div>
+            </div>
+            <div class="stat-tile">
+              <div class="label">Current Pace</div>
+              <div class="num accent">6:09</div>
+            </div>
+            <div class="stat-tile">
+              <div class="label">Avg Pace</div>
+              <div class="num">6:24</div>
+            </div>
+          </div>
+
+          <div style="flex:1"></div>
+
+          <div class="btn-row">
+            <div class="btn secondary">⏸ Pause</div>
+            <div class="btn danger-outline">Finish</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-col">
+    <div class="frame-label">
+      <div class="name">2 · Post-Run Summary</div>
+      <div class="desc">CardioRunSummaryScreen — reached via Finish; Save flows into the existing cardio-log save path</div>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="status-bar">
+          <span>9:41</span>
+          <span>●●●&nbsp;&nbsp;📶&nbsp;&nbsp;🔋</span>
+        </div>
+
+        <div class="app-header">
+          <div class="side"><div class="icon-btn">←</div></div>
+          <div class="title">Run Summary</div>
+          <div class="side"></div>
+        </div>
+
+        <div class="content">
+          <div class="scroll-fade">
+            <div class="map-box summary">
+              <div class="map-badge">5.18 km route</div>
+              <svg viewBox="0 0 320 200" preserveAspectRatio="none">
+                <polyline points="40,160 70,140 65,110 100,95 140,100 165,70 200,60 220,40 260,45 280,20"
+                  fill="none" stroke="#00E38E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+              </svg>
+              <div class="pin start" style="left:40px; top:160px;"><span>S</span></div>
+              <div class="pin finish" style="left:280px; top:20px;"><span>F</span></div>
+            </div>
+
+            <div class="card">
+              <div class="card-label">Session Stats</div>
+              <div class="summary-stat-grid">
+                <div class="item">
+                  <div class="num">5.18</div>
+                  <div class="lbl">Km</div>
+                </div>
+                <div class="item">
+                  <div class="num">32:47</div>
+                  <div class="lbl">Duration</div>
+                </div>
+                <div class="item">
+                  <div class="num">6:19</div>
+                  <div class="lbl">Avg /km</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-label">Splits</div>
+              <div class="splits">
+                <div class="split-row">
+                  <div class="km">1</div>
+                  <div class="split-bar-track"><div class="split-bar-fill" style="width:78%"></div></div>
+                  <div class="pace">6:32</div>
+                  <div></div>
+                </div>
+                <div class="split-row">
+                  <div class="km">2</div>
+                  <div class="split-bar-track"><div class="split-bar-fill" style="width:88%"></div></div>
+                  <div class="pace">6:15</div>
+                  <div></div>
+                </div>
+                <div class="split-row">
+                  <div class="km">3</div>
+                  <div class="split-bar-track"><div class="split-bar-fill" style="width:95%"></div></div>
+                  <div class="pace">6:02</div>
+                  <div class="best-tag">BEST</div>
+                </div>
+                <div class="split-row">
+                  <div class="km">4</div>
+                  <div class="split-bar-track"><div class="split-bar-fill" style="width:82%"></div></div>
+                  <div class="pace">6:21</div>
+                  <div></div>
+                </div>
+                <div class="split-row">
+                  <div class="km">5</div>
+                  <div class="split-bar-track"><div class="split-bar-fill" style="width:75%"></div></div>
+                  <div class="pace">6:38</div>
+                  <div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="text-align:center;">
+              <div class="card-label" style="margin-bottom:4px;">Arnold's Estimate</div>
+              <div style="font-size:32px; font-weight:900; letter-spacing:-0.5px;">412</div>
+              <div style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">calories burned</div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <div class="btn secondary">Share</div>
+            <div class="btn primary">Save Session</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="notes">
+  <strong>Notes on this mockup:</strong> map areas use a placeholder grid + drawn SVG polyline in
+  place of real map tiles (Phase 1 recommends adding <code>react-native-maps</code> — see
+  <code>docs/gps-cardio.md</code>). The live screen's Finish button and the summary screen's Save
+  button are the two state transitions that matter most for review — Finish stops recording and
+  navigates to Summary; Save calls the existing <code>useSaveCardioLog</code> mutation extended
+  with route data, then navigates home exactly like today's manual-entry flow. Pause/Resume,
+  Discard, and the permission-denied fallback state aren't pictured here but are specified in the
+  plan doc.
+</footer>
+
+</body>
+</html>

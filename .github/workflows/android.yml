@@ -1,0 +1,114 @@
+name: Android build
+
+# Nothing built this before (see the Android Readiness Audit) — this is the
+# safety net that was missing: catch a build-breaking change on every push/
+# PR instead of finding out the next time someone runs a local build. The
+# signed-release job only runs once ANDROID_RELEASE_KEYSTORE is added as a
+# repo secret; until then it's skipped and the debug build alone still
+# validates every change.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  debug-build:
+    name: Debug build (always runs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # See android/app/build.gradle's nodeExecutableAndArgs comment — a
+      # bare "node" resolves fine here since (unlike Android Studio's GUI
+      # launch on a dev Mac) this shell's PATH is already correct.
+      - name: Assemble debug APK
+        working-directory: android
+        env:
+          NODE_BINARY: node
+        run: ./gradlew assembleDebug --no-daemon
+
+  release-build:
+    name: Signed release build (only if a release keystore secret exists)
+    runs-on: ubuntu-latest
+    # Secrets can't be referenced directly in a job-level `if`, so this
+    # checks via a needs-less guard step instead — see the `check` step
+    # below. Skips cleanly (not a failure) when the secret isn't set yet.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether a release keystore is configured
+        id: check
+        run: |
+          if [ -n "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.check.outputs.configured == 'true'
+
+      - uses: actions/setup-java@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # Same keystore this app already uses for local release builds (see
+      # android/app/build.gradle's signingConfigs.release comment) — base64
+      # the .jks file and store it plus the three passwords as repo secrets:
+      #   ANDROID_RELEASE_KEYSTORE_BASE64  (base64 -i upload-keystore.jks)
+      #   ANDROID_RELEASE_KEY_ALIAS
+      #   ANDROID_RELEASE_STORE_PASSWORD
+      #   ANDROID_RELEASE_KEY_PASSWORD
+      - name: Write keystore
+        if: steps.check.outputs.configured == 'true'
+        run: echo "${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}" | base64 -d > /tmp/release-upload.jks
+
+      # Optional — Android push (FCM) needs this to actually register
+      # tokens in a build produced here; without it the build still
+      # succeeds (see build.gradle's conditional google-services plugin
+      # apply), push just no-ops in that build, same as an uncommitted
+      # local checkout. Add as a repo secret: base64 -i google-services.json
+      - name: Write google-services.json (if configured)
+        if: steps.check.outputs.configured == 'true' && secrets.GOOGLE_SERVICES_JSON_BASE64 != ''
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
+
+      - name: Bundle signed release AAB
+        if: steps.check.outputs.configured == 'true'
+        working-directory: android
+        env:
+          NODE_BINARY: node
+        run: |
+          ./gradlew bundleRelease --no-daemon \
+            -PMYAPP_UPLOAD_STORE_FILE=/tmp/release-upload.jks \
+            -PMYAPP_UPLOAD_KEY_ALIAS="${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}" \
+            -PMYAPP_UPLOAD_STORE_PASSWORD="${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}" \
+            -PMYAPP_UPLOAD_KEY_PASSWORD="${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.configured == 'true'
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

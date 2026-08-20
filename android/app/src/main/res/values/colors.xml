@@ -1,0 +1,25 @@
+<resources>
+    <!-- SoSet brand background — avoids a white flash between the OS splash and JS bundle load on a dark-mode-first app. -->
+    <color name="sosetBackground">#090B10</color>
+
+    <!-- Matches src/theme/tokens.ts accent.primary (dark mode) — the tint
+         Android applies behind the masked notification small icon in the
+         shade/lock screen, and FCM's default_notification_color fallback
+         for the killed-app auto-display path. -->
+    <color name="notificationAccent">#00F5D4</color>
+
+    <!--
+      Coach Summary widget palette — light mode (default `values/`, overridden
+      by `values-night/colors.xml` for dark). Same values as
+      ios/GymBeeWidget/CoachSummaryWidgetView.swift's WidgetColors enum, kept
+      in sync by hand — there's no shared token source between a native
+      widget and the RN app's own theme/tokens.ts.
+    -->
+    <color name="widgetBg">#FFFFFF</color>
+    <color name="widgetTextPrimary">#14161A</color>
+    <color name="widgetTextSecondary">#62666F</color>
+    <color name="widgetTextTertiary">#94989A</color>
+    <color name="widgetDivider">#17000000</color>
+    <color name="widgetGood">#00A38D</color>
+    <color name="widgetWarn">#A5670C</color>
+</resources>

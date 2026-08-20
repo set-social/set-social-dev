@@ -1,0 +1,10 @@
+pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
+plugins { id("com.facebook.react.settings") }
+// Default command is bare "npx @react-native-community/cli config" — same
+// PATH problem as nodeExecutableAndArgs in app/build.gradle (Android Studio,
+// launched as a GUI app, doesn't see a Homebrew-installed npx), just hit
+// during Gradle sync instead of a build task. Absolute path sidesteps it.
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand(["/opt/homebrew/bin/npx", "@react-native-community/cli", "config"]) }
+rootProject.name = 'GymBee'
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')

@@ -1,0 +1,32 @@
+buildscript {
+    ext {
+        buildToolsVersion = "36.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.1.20"
+        // Several native modules (gesture-handler, screens, svg,
+        // image-picker) fall back to running `node --print
+        // "require.resolve('react-native/package.json')"` to find this
+        // themselves when it's unset — via bare "node", which fails under
+        // Android Studio for the same PATH reason as nodeExecutableAndArgs
+        // in app/build.gradle (it doesn't inherit a Homebrew-installed
+        // node). Setting it here short-circuits that node call entirely.
+        REACT_NATIVE_NODE_MODULES_DIR = new File(rootDir, "../node_modules/react-native").absolutePath
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        // Android push notifications (FCM) — applied conditionally in
+        // app/build.gradle, only once google-services.json actually exists.
+        classpath("com.google.gms:google-services:4.4.2")
+    }
+}
+
+apply plugin: "com.facebook.react.rootproject"

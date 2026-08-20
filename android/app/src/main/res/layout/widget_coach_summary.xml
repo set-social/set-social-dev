@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android counterpart of CoachSummaryWidgetView.swift's MediumWidgetView —
+  RemoteViews only supports a fixed set of plain Android widgets (no
+  Compose/Glance here, no custom views), so this is hand-built XML rather
+  than mirroring SwiftUI's structure directly. Populated entirely by
+  CoachSummaryWidgetProvider.kt from the same WidgetPayload JSON the iOS
+  side reads — see WidgetBridge (both platforms use that exact module name
+  from the JS side).
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background">
+
+    <!-- CoachSummaryWidgetProvider toggles dataContainer/emptyStateContainer
+         visibility based on whether the stored payload is present and still
+         dated today — same "open the app to sync" fallback as iOS's
+         WidgetEmptyStateView, for the same reasons (no payload yet, or a
+         stale one from before local midnight). -->
+    <LinearLayout
+        android:id="@+id/dataContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+    <!-- Header: readiness badge dot + brand mark -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/badgeDot"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:src="@drawable/widget_badge_dot"
+            android:contentDescription="@null" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- ic_setsocial_mark.png is the app's "light-on-dark" mark (see
+             SetSocialLogo.tsx) — a light glyph meant for a dark surface,
+             all but invisible on this widget's light-mode white background
+             without a tint. android:tint applies over the source's alpha
+             channel only, so this stays visible (and theme-adaptive, since
+             widgetTextPrimary is split light/values-night) in both. -->
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_setsocial_mark"
+            android:tint="@color/widgetTextPrimary"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/app_name" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/headline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/widgetTextPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end"
+        tools:text="Ready to train" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@color/widgetDivider" />
+
+    <TextView
+        android:id="@+id/planTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/widgetTextPrimary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="Push Day" />
+
+    <TextView
+        android:id="@+id/planMeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/widgetTextTertiary"
+        android:textSize="11sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="5 exercises · ~42 min" />
+
+    <TextView
+        android:id="@+id/metricsLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/widgetTextSecondary"
+        android:textSize="11sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        tools:text="Readiness 82% · 6 day streak · 1450/2200 cal" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/sessionsLine"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/widgetTextTertiary"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="3 of 4 sessions this week" />
+
+        <LinearLayout
+            android:id="@+id/logFoodButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/widget_pill_button"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_log_food_label"
+                android:textColor="@color/widgetTextPrimary"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/emptyStateContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_open_app_title"
+            android:textColor="@color/widgetTextPrimary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/widget_open_app_subtitle"
+            android:textColor="@color/widgetTextSecondary"
+            android:textSize="12sp" />
+    </LinearLayout>
+</FrameLayout>

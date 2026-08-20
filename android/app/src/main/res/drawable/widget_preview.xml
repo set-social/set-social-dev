@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static fallback preview for the widget picker on Android <12 —
+  coach_summary_widget_info.xml's previewLayout attribute (a live render of
+  widget_coach_summary.xml) only works on API 31+; older pickers show
+  nothing at all without a previewImage. RemoteViews can't be rasterized
+  into a build-time resource, so this is a simplified likeness (card +
+  brand mark) rather than a live data preview — same "reuse the proven
+  layer-list pattern" approach as launch_background.xml, not an attempt at
+  pixel-perfect fidelity for what's a minor picker-thumbnail gap.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/widget_background" />
+    <item
+        android:width="40dp"
+        android:height="32dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/ic_setsocial_mark"
+            android:tint="@color/widgetTextPrimary"
+            android:gravity="fill" />
+    </item>
+</layer-list>

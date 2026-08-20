@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Log Food" button background — same @color/widgetDivider wash the iOS
+     widget's LogFoodLinkView uses for its capsule background. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widgetDivider" />
+    <corners android:radius="999dp" />
+</shape>

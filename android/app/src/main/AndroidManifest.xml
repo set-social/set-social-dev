@@ -1,0 +1,152 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Photo/video library access for profile photo upload and Form
+         Check's "Choose from Library" (video). READ_MEDIA_IMAGES/VIDEO cover
+         API 33+, which split media access by type — a picker launched with
+         mediaType: 'video' (see FormCheckScreen) can't be granted access
+         under READ_MEDIA_IMAGES alone. The maxSdkVersion permission covers
+         older devices where react-native-image-picker falls back to legacy
+         storage access. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- One-shot foreground location read for "At My Gym" check-ins — see
+         CheckInScreen/useCurrentLocation. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Continuous GPS route recording for live-tracked cardio (see
+         docs/gps-cardio.md, routeTracking.ts) — the one place this app
+         requests background location, and only while a run/ride is
+         actively being tracked (CardioTrackingService starts/stops exactly
+         bracketing a session, never running otherwise). On API 30+ this
+         permission can't be granted through a runtime dialog at all; the
+         live-tracking screen degrades to foreground-only tracking with a
+         "gap" indicator when it's absent rather than blocking the feature. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Take Photo option on the new-post FAB. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Runtime-requested via PushNotificationsModule.requestPermission on
+         API 33+ (below that, notifications are implicitly allowed). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application
+      android:name=".MainApplication"
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:allowBackup="false"
+      android:theme="@style/AppTheme"
+      android:usesCleartextTraffic="${usesCleartextTraffic}"
+      android:supportsRtl="true">
+      <activity
+        android:name=".MainActivity"
+        android:label="@string/app_name"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:launchMode="singleTask"
+        android:windowSoftInputMode="adjustResize"
+        android:screenOrientation="portrait"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+        <!-- soset:// deep links — used to return to the app after an
+             external OAuth flow (e.g. the WHOOP connect callback page). -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="soset" />
+        </intent-filter>
+      </activity>
+
+      <service
+        android:name=".SetSocialFirebaseMessagingService"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT" />
+        </intent-filter>
+      </service>
+
+      <!-- Started/stopped from JS exactly bracketing a live cardio session
+           — see CardioTrackingService.kt for why it exists. -->
+      <service
+        android:name=".CardioTrackingService"
+        android:exported="false"
+        android:foregroundServiceType="location" />
+      <!-- Channel id FCM posts to when it auto-displays a notification
+           itself (app killed, no onMessageReceived call) — must match the
+           channel SetSocialFirebaseMessagingService.showNotification creates
+           for the app-alive path, so both look the same regardless of which
+           one handled a given message. -->
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="default" />
+
+      <!-- Same reasoning as the channel id above, for the killed-app
+           auto-display path: without these, FCM falls back to the full-color
+           launcher icon, which Android flattens to a solid white blob in the
+           status bar (it masks by alpha, and the launcher icon has none).
+           ic_setsocial_mark already has a real alpha channel (see its own
+           comment in widget_coach_summary.xml), so it silhouettes correctly
+           — same drawable SetSocialFirebaseMessagingService.showNotification
+           now uses for the app-alive path, so both look identical. -->
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@drawable/ic_setsocial_mark" />
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_color"
+        android:resource="@color/notificationAccent" />
+
+      <!-- react-native-maps (LiveCardioTrackingScreen/CardioRunSummaryScreen)
+           map rendering on Android — Maps SDK for Android key, restricted
+           in Google Cloud Console to this app's package name
+           (com.setsocial.app) + the debug keystore's SHA-1 fingerprint.
+           Add the release keystore's SHA-1 as a second fingerprint on this
+           same key once a real upload keystore exists (see build.gradle's
+           signingConfigs comment) — release builds currently fall back to
+           the debug keystore, so this key already covers them too. iOS
+           needs no key — react-native-maps uses Apple MapKit there. -->
+      <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyBNhVnuGLZNdBxcD76ACRfqi1SoFXdCABM" />
+
+      <!-- Home Screen widget — updatePeriodMillis="0" in
+           coach_summary_widget_info.xml means this only redraws when
+           WidgetBridgeModule.reloadWidgets() broadcasts ACTION_APPWIDGET_UPDATE
+           after a fresh payload is synced, not on an OS timer. -->
+      <receiver
+        android:name=".CoachSummaryWidgetProvider"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/coach_summary_widget_info" />
+      </receiver>
+    </application>
+
+    <!-- Android 11+ (API 30+) hides other apps' packages from
+         PackageManager queries by default ("package visibility") — without
+         this, Linking.canOpenURL() falsely returns false for https/mailto
+         links even when a browser/mail client is installed, since the app
+         can no longer see it. Needed for the Whoop/Spotify OAuth connect
+         flow (IntegrationsScreen) and the mailto: support link
+         (SettingsScreen) to work at all on API 30+. -->
+    <queries>
+      <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" />
+      </intent>
+      <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="mailto" />
+      </intent>
+    </queries>
+</manifest>
